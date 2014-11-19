@@ -37,6 +37,28 @@
 
   Such is the power of Javascript!!!
 
+  Notes on Rules:
+
+  win_conditions = kill_all_opponents || more_diamonds_after_1250_turns
+
+  movements choices: North, South, East, West, Stay (default)
+
+  if(hp <= 0) { status = dead; }
+  initial_hp = 100;
+
+  diamond mines deal 20 dmg upon capture (aka: don't capture a diamond mine if low on hp)
+  capture mine by moving into it
+
+  earn 1 diamond per owned mine per turn
+
+  to regain hp:
+	move into health well (hp_restore = 30) || move into ally (hp_restore = 40)
+
+  to attack enemies:
+	enemies attacked AUTOMATICALLY at END OF TURN.
+	deal 20 dmg to ALL ADJACENT ENEMIES
+	can also deal extra 10 dmg by moving into enemy
+
 */
 
 // Strategy definitions
