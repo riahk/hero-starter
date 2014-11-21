@@ -1,12 +1,17 @@
 var helpers = {};
 
 // Returns false if the given coordinates are out of range
+// use to: 
+//	-make sure you don't waste a move(i.e. try to go east when you're at edge of map
+//	-determine whether you're in a corner (not a good place to be, should be avoided)
 helpers.validCoordinates = function(board, distanceFromTop, distanceFromLeft) {
   return (!(distanceFromTop < 0 || distanceFromLeft < 0 ||
       distanceFromTop > board.lengthOfSide - 1 || distanceFromLeft > board.lengthOfSide - 1));
 };
 
 // Returns the tile [direction] (North, South, East, or West) of the given X/Y coordinate
+// aka returns objects on the tiles adjacent to a spot on the board.
+// can be used to assess surroundings, or find the closest mine/enemy/ally/heal spot
 helpers.getTileNearby = function(board, distanceFromTop, distanceFromLeft, direction) {
 
   // These are the X/Y coordinates
@@ -141,6 +146,30 @@ helpers.findNearestObjectDirectionAndDistance = function(board, fromTile, tileCa
   return false;
 };
 
+//Returns the direction element of a tile returned by 
+//helpers.findNearestObjectDirectionAndDistance
+helpers.tileDirection = function(tile) {
+  if(tile) {
+    return tile.direction;
+  } else { return false; }
+};
+
+//Returns the distance element of a tile returned by
+//helpers.findNearestObjectDirectionAndDistance
+helpers.tileDistance = function(tile) {
+  if(tile) {
+    return tile.distance;
+  } else { return false; }
+};
+
+//Returns the coords of a tile returned by
+//helpers.findNearestObjectDirectionAndDistance
+helpers.tileCoords = function(tile) {
+  if(tile) {
+    return tile.coords;
+  } else { return false; }
+};
+
 // Returns the direction of the nearest non-team diamond mine or false, if there are no diamond mines
 helpers.findNearestNonTeamDiamondMine = function(gameData) {
   var hero = gameData.activeHero;
@@ -159,8 +188,8 @@ helpers.findNearestNonTeamDiamondMine = function(gameData) {
     }
   }, board);
 
-  //Return the direction that needs to be taken to achieve the goal
-  return pathInfoObject.direction;
+  //Return tile
+  return pathInfoObject;
 };
 
 // Returns the nearest unowned diamond mine or false, if there are no diamond mines
@@ -181,8 +210,8 @@ helpers.findNearestUnownedDiamondMine = function(gameData) {
     }
   });
 
-  //Return the direction that needs to be taken to achieve the goal
-  return pathInfoObject.direction;
+  //Return tile
+  return pathInfoObject;
 };
 
 // Returns the nearest health well or false, if there are no health wells
@@ -195,8 +224,8 @@ helpers.findNearestHealthWell = function(gameData) {
     return healthWellTile.type === 'HealthWell';
   });
 
-  //Return the direction that needs to be taken to achieve the goal
-  return pathInfoObject.direction;
+  //Return tile
+  return pathInfoObject;
 };
 
 // Returns the direction of the nearest enemy with lower health
@@ -210,10 +239,11 @@ helpers.findNearestWeakerEnemy = function(gameData) {
     return enemyTile.type === 'Hero' && enemyTile.team !== hero.team && enemyTile.health < hero.health;
   });
 
-  //Return the direction that needs to be taken to achieve the goal
-  //If no weaker enemy exists, will simply return undefined, which will
-  //be interpreted as "Stay" by the game object
-  return pathInfoObject.direction;
+  //Return tile
+  //If no weaker enemy exists, will simply return false 
+  if(pathInfoObject) {
+    return pathInfoObject;
+  } else { return false; }
 };
 
 // Returns the direction of the nearest enemy
@@ -227,8 +257,8 @@ helpers.findNearestEnemy = function(gameData) {
     return enemyTile.type === 'Hero' && enemyTile.team !== hero.team;
   });
 
-  //Return the direction that needs to be taken to achieve the goal
-  return pathInfoObject.direction;
+  //Return tile
+  return pathInfoObject;
 };
 
 // Returns the direction of the nearest friendly champion
@@ -242,8 +272,119 @@ helpers.findNearestTeamMember = function(gameData) {
     return heroTile.type === 'Hero' && heroTile.team === hero.team;
   });
 
-  //Return the direction that needs to be taken to achieve the goal
-  return pathInfoObject.direction;
+  //Return tile
+  return pathInfoObject;
 };
+
+
+//Takes an object type, and finds the closest one (combines the above helper methods)
+helpers.findClosestObjectOfType = function(type, gameData) {
+  switch(type) {
+    case 'NonTeamDiamondMine':
+      return helpers.findNearestNonTeamDiamondMine(gameData);
+      break;
+    case 'UnownedDiamondMine':
+      return helpers.findNearestUnownedDiamondMine(gameData);
+      break;
+    case 'HealthWell':
+      return helpers.findNearestHealthWell(gameData);
+      break;
+    case 'WeakerEnemy':
+      return helpers.findNearestWeakerEnemy(gameData);
+      break;
+    case 'Enemy':
+      return helpers.findNearestEnemy(gameData);
+      break;
+    case 'TeamMember':
+      return helpers.findNearestEnemy(gameData);
+      break;
+  }
+};
+      
+
+//Compares two objects and determines which one is closer (return that tile)
+//if the tiles are equal distance away, return false
+helpers.findCloserTile = function(tile1, tile2) {
+  var distance1 = helpers.tileDistance(tile1);
+  var distance2 = helpers.tileDistance(tile2);
+
+  if(distance1 === distance2) {
+    return false;
+  } else if(distance1 < distance2) {
+    return tile1;
+  } else { return tile2; }
+};
+
+/*
+//TODO: this fxn code doesn't work! need to fix
+
+//scans for the certain object type within a given range from a start point
+//startx is distancefromleft, starty is distancefromtop
+//stores all matching items in an array, returns false if no objects are found
+//return false if start tile is invalid
+//
+//
+helpers.scanFor = function(desiredType, startx, starty, range, gameData) {
+  var board = gameData.board;
+  var x;
+  var y;
+  //check that start point is a valid tile
+  if(!helpers.validCoordinates(board, startx, starty) {
+    return false;
+  }
+  var tiles = []; //a queue for tiles to check
+  var validTiles = []; //for all tiles that match the desired type
+
+  if(range === 1) { //get the four tiles adjacent to start tile using getTileNearby
+    var directions = ['North', 'East', 'South', 'West'];
+    forEach(directions, function(direction) {
+      tiles.push(helpers.getTileNearby(board, startx, starty, direction));
+    });
+  } else if(range > 1) { //get all surrounding tiles using embedded for loops
+      //add immediate surroundings first
+      var directions = ['North', 'East', 'South', 'West'];
+      forEach(directions, function(direction) {
+        tiles.push(helpers.getTileNearby(board, startx, starty, direction));
+      }
+
+      //get tiles from each subsequent layer, starting at the inside and moving outward
+      var max = range;
+      var layer; //keep track of the layer we're on, 2-max
+      var left; //left limit for the range
+      var right; //right limit for the range
+      var height; //distance between top and bottom square
+      var midpoint = startx;
+      for(layer = 2; layer <= max; layer++) {
+        left = startx - range;
+        right = startx + range;
+        y = starty;
+        height = 0;
+        for(x = left; x <= right; x++) {
+          //add tiles
+          tiles.push(board.tiles[y][x]);
+          if(height > 0) {
+            tiles.push(board.tiles[y + height][x]);
+          }
+
+          //determine whether to increment or decrement y and height
+          if(x >= midpoint) {
+            height -= 2;
+            y--;
+          } else { height += 2; y++; }
+        }
+      }
+    }
+    
+
+    //check type of each tile
+  while(tiles.length > 0) {
+    var tile = tiles.pop();
+    if(tile.type === desiredType) { //check if tile matches qualifications
+      validTiles.push(tile);
+    }
+  }
+  return validTiles;
+};
+*/
 
 module.exports = helpers;

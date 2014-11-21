@@ -1,5 +1,7 @@
 /*
 
+  CURRENT STRATEGY: AGGRESSOR
+
   Strategies for the hero are contained within the "moves" object as
   name-value pairs, like so:
 
@@ -37,7 +39,7 @@
 
   Such is the power of Javascript!!!
 
-  Notes on Rules:
+  Notes on Basic Rules:
 
   win_conditions = kill_all_opponents || more_diamonds_after_1250_turns
 
@@ -52,12 +54,68 @@
   earn 1 diamond per owned mine per turn
 
   to regain hp:
-	move into health well (hp_restore = 30) || move into ally (hp_restore = 40)
+	move into health well (hp_restore = 30)
+	move into ally to restore THEIR hp (hp_restore = 40)
 
   to attack enemies:
 	enemies attacked AUTOMATICALLY at END OF TURN.
 	deal 20 dmg to ALL ADJACENT ENEMIES
 	can also deal extra 10 dmg by moving into enemy
+
+  Notes on Strategy:
+
+  The best way to win seems to be to hold as many diamonds as possible. If even one of the
+  opposing team survives, it is important to have diamond mines. (of course, reducing the 
+  enemy's numbers also reduces their potential for diamond yield.) 
+
+  An ideal character will: maintain their hp, and prioritize capturing diamond mines. only
+  attack opponents when your diamond status is good.
+  This would be best achieved by:
+	1) assessing the current diamond mine status:
+		-how many diamond mines does your team own?
+		-if your team does not hold all diamond mines, where is the nearest enemy
+		occupied mine? is it heavily guarded (i.e. a great deal of enemies would
+		likely result in death)
+		-are any of the team's mines being threatened? if a mine is threatened,
+		the threat should be eliminated. define a threat as an enemy within two
+		spaces of a mine.
+	2) if the current mine status is satisfactory, the next best thing is to go after 
+	   enemy players. OR: stay at a mine to defend it from incoming enemies.
+
+  Helper Methods:
+
+  helpers.validCoordinates(board, distanceFromTop, distanceFromLeft)
+	determines whether the given coordinates are on the map (returns true/false)
+
+  helpers.getTileNearby(board, distanceFromTop, distanceFromLeft, direction)
+	returns the object on one of the adjacent tiles from given coordinate (north, south,
+	east or west)
+
+  helpers.findNearestObjectDirectionAndDistance(board, fromTile, tileCallback)
+	returns the nearest tile matching given conditions(tileCallback)
+	called in functions to find nearest unowned mine, heal well, etc.
+	returns object with direction and distance from initial location and coords
+
+  helpers.findNearestNonTeamDiamondMine(gameData)
+	returns direction towards nearest non-team diamond mine
+	returns false if none
+
+  helpers.findNearestUnownedDiamondMine(gameData)
+	returns diretion towards nearest unowned diamond mine
+	returns false if none
+
+  helpers.findNearestHealthWell(gameData)
+/	returns direction towards nearest heal well
+	returns false if none
+
+  helpers.findNearestWeakerEnemy(gameData)
+	returns direction of nearest low-hp enemy (hp less than the hero's)
+
+  helpers.findNearestEnemy = function(gameData)
+	returns direction of nearest enemy
+
+  helpers.findNearestTeamMember(gameData)
+	returns direction of nearest team member
 
 */
 
@@ -68,10 +126,12 @@ var moves = {
     // Here, we ask if your hero's health is below 30
     if (gameData.activeHero.health <= 30){
       // If it is, head towards the nearest health well
-      return helpers.findNearestHealthWell(gameData);
+      var tile = helpers.findNearestHealthWell(gameData);
+      return helpers.tileDirection(tile);
     } else {
       // Otherwise, go attack someone...anyone.
-      return helpers.findNearestEnemy(gameData);
+      var tile = helpers.findNearestEnemy(gameData);
+      return helpers.tileDirection(tile);
     }
   },
 
@@ -80,17 +140,25 @@ var moves = {
     // Here, we ask if your hero's health is below 75
     if (gameData.activeHero.health <= 75){
       // If it is, head towards the nearest health well
-      return helpers.findNearestHealthWell(gameData);
+      var tile = helpers.findNearestHealthWell(gameData);
+      return helpers.tileDirection(tile);
     } else {
       // Otherwise, go mine some diamonds!!!
-      return helpers.findNearestNonTeamDiamondMine(gameData);
+      var tile = helpers.findNearestNonTeamDiamondMine(gameData);
+      return helpers.tileDirection(tile);
     }
   },
 
   // Balanced
   balanced: function(gameData, helpers){
-    //FIXME : fix;
-    return null;
+    /*
+    //under construction
+    var myHero = gameData.activeHero;
+    //first, check hp
+    if(myHero.health <= 50) { //if at half health, find nearest heal well
+      var nearestWell = helpers.findClosestObjectOfType('HealthWell', gameData);
+      if(nearestWell
+    */
   },
 
   // The "Northerner"
@@ -113,9 +181,11 @@ var moves = {
   priest : function(gameData, helpers) {
     var myHero = gameData.activeHero;
     if (myHero.health < 60) {
-      return helpers.findNearestHealthWell(gameData);
+      var tile = helpers.findNearestHealthWell(gameData);
+      return helpers.tileDirection(tile);
     } else {
-      return helpers.findNearestTeamMember(gameData);
+      var tile = helpers.findNearestTeamMember(gameData);
+      return helpers.tileDirection(tile);
     }
   },
 
@@ -124,9 +194,11 @@ var moves = {
   unwiseAssassin : function(gameData, helpers) {
     var myHero = gameData.activeHero;
     if (myHero.health < 30) {
-      return helpers.findNearestHealthWell(gameData);
+      var tile = helpers.findNearestHealthWell(gameData);
+      return helpers.tileDirection(tile);
     } else {
-      return helpers.findNearestEnemy(gameData);
+      var tile = helpers.findNearestEnemy(gameData);
+      return helpers.tileDirection(tile);
     }
   },
 
@@ -135,9 +207,11 @@ var moves = {
   carefulAssassin : function(gameData, helpers) {
     var myHero = gameData.activeHero;
     if (myHero.health < 50) {
-      return helpers.findNearestHealthWell(gameData);
+      var tile = helpers.findNearestHealthWell(gameData);
+      return helpers.tileDirection(tile);
     } else {
-      return helpers.findNearestWeakerEnemy(gameData);
+      var tile = helpers.findNearestWeakerEnemy(gameData);
+      return helpers.tileDirection(tile);
     }
   },
 
@@ -152,8 +226,8 @@ var moves = {
         return true;
       }
     });
-    var distanceToHealthWell = healthWellStats.distance;
-    var directionToHealthWell = healthWellStats.direction;
+    var distanceToHealthWell = helpers.tileDistance(healthWellStats);
+    var directionToHealthWell = helpers.tileDirection(healthWellStats);
 
     if (myHero.health < 40) {
       //Heal no matter what if low health
@@ -179,8 +253,8 @@ var moves = {
       }
     });
 
-    var distanceToHealthWell = healthWellStats.distance;
-    var directionToHealthWell = healthWellStats.direction;
+    var distanceToHealthWell = helpers.tileDistance(healthWellStats);
+    var directionToHealthWell = helpers.tileDirection(healthWellStats);
 
     if (myHero.health < 40) {
       //Heal no matter what if low health
@@ -190,14 +264,16 @@ var moves = {
       return directionToHealthWell;
     } else {
       //If healthy, go capture a diamond mine!
-      return helpers.findNearestUnownedDiamondMine(gameData);
+      var tile = helpers.findNearestUnownedDiamondMine(gameData);
+      return helpers.tileDirection(tile);
     }
   },
 
   // The "Coward"
   // This hero will try really hard not to die.
   coward : function(gameData, helpers) {
-    return helpers.findNearestHealthWell(gameData);
+      var tile = helpers.findNearestHealthWell(gameData);
+      return helpers.tileDirection(tile);
   }
  };
 
