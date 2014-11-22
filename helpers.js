@@ -315,7 +315,7 @@ helpers.findCloserTile = function(tile1, tile2) {
   } else { return tile2; }
 };
 
-/*
+
 //TODO: this fxn code doesn't work! need to fix
 
 //scans for the certain object type within a given range from a start point
@@ -323,57 +323,54 @@ helpers.findCloserTile = function(tile1, tile2) {
 //stores all matching items in an array, returns false if no objects are found
 //return false if start tile is invalid
 //
-//
-helpers.scanFor = function(desiredType, startx, starty, range, gameData) {
+//note: tiles are defined as board.tiles[distfromtop][distfromleft] (aka y,x format)
+helpers.scanForTilesofType = function(desiredType, startx, starty, range, gameData) {
   var board = gameData.board;
-  var x;
-  var y;
+  var x; //distance from left
+  var y; //distance from top
   //check that start point is a valid tile
-  if(!helpers.validCoordinates(board, startx, starty) {
+  if(!(helpers.validCoordinates(board, startx, starty))) {
     return false;
   }
+  
   var tiles = []; //a queue for tiles to check
   var validTiles = []; //for all tiles that match the desired type
 
-  if(range === 1) { //get the four tiles adjacent to start tile using getTileNearby
-    var directions = ['North', 'East', 'South', 'West'];
-    forEach(directions, function(direction) {
-      tiles.push(helpers.getTileNearby(board, startx, starty, direction));
-    });
-  } else if(range > 1) { //get all surrounding tiles using embedded for loops
-      //add immediate surroundings first
-      var directions = ['North', 'East', 'South', 'West'];
-      forEach(directions, function(direction) {
-        tiles.push(helpers.getTileNearby(board, startx, starty, direction));
-      }
+  if(range > 0) { //get all surrounding tiles using embedded for loops
 
-      //get tiles from each subsequent layer, starting at the inside and moving outward
-      var max = range;
-      var layer; //keep track of the layer we're on, 2-max
-      var left; //left limit for the range
-      var right; //right limit for the range
-      var height; //distance between top and bottom square
-      var midpoint = startx;
-      for(layer = 2; layer <= max; layer++) {
-        left = startx - range;
-        right = startx + range;
-        y = starty;
-        height = 0;
-        for(x = left; x <= right; x++) {
-          //add tiles
+    //get tiles from each subsequent layer, starting at the inside and moving outward
+
+    var max = range; //the number of layers to search through
+    var layer; //keep track of the layer we're on, 1-max
+    var left; //left limit for the layer
+    var right; //right limit for the layer
+    var height; //distance between top and bottom square
+    var midpoint = startx; //does not change
+
+    for(layer = 1; layer <= max; layer++) {
+      left = startx - range;
+      right = startx + range;
+      y = starty;
+      height = 0;
+      for(x = left; x <= right; x++) {
+        //add tiles, if valid
+        if(helpers.validCoordinates(board, y, x)) {
           tiles.push(board.tiles[y][x]);
           if(height > 0) {
-            tiles.push(board.tiles[y + height][x]);
+            if(helpers.validCoordinates(board, y + height, x)) {
+              tiles.push(board.tiles[y + height][x]);
+            }
           }
-
-          //determine whether to increment or decrement y and height
-          if(x >= midpoint) {
-            height -= 2;
-            y--;
-          } else { height += 2; y++; }
         }
+
+        //determine whether to increment or decrement y and height
+        if(x >= midpoint) {
+        height -= 2;
+        y--;
+        } else { height += 2; y++; }
       }
     }
+  }
     
 
     //check type of each tile
@@ -385,6 +382,6 @@ helpers.scanFor = function(desiredType, startx, starty, range, gameData) {
   }
   return validTiles;
 };
-*/
+
 
 module.exports = helpers;
