@@ -383,5 +383,54 @@ helpers.scanForTilesofType = function(desiredType, startx, starty, range, gameDa
   return validTiles;
 };
 
+//function to give the opposite direction
+helpers.oppositeDirection = function(direction) {
+  switch(direction) {
+    case 'North':
+      return 'South';
+      break;
+    case 'South':
+      return 'North';
+      break;
+    case 'West':
+      return 'East';
+      break;
+    case 'East':
+      return 'West';
+      break;
+    default:
+      return 'Stay';
+  }
+}
+
+//scan the current diamond mine status (determines number of team, enemy and unowned diamond mines on map
+//returns an array, stats[0] = number of team mines; stats[1] = number of non-team mines
+helpers.mineStats = function(gameData) {
+  var hero = gameData.activeHero;
+  var board = gameData.board;
+  var x;
+  var y;
+  var currentTile;
+
+  var teamMines;
+  var nonTeamMines;
+
+  for(x = 0; x <= 12; x++) {
+    for(y = 0; y <= 12; y++) {
+      currentTile = board.tiles[y][x];
+      if(currentTile.type === 'DiamondMine') {
+        if(currentTile.owner.team == hero.team) {
+          teamMines++;
+        } else { nonTeamMines++; }
+      }
+    }
+  }
+
+  var stats = [];
+  stats.push(teamMines);
+  stats.push(nonTeamMines);
+
+  return stats;
+}
 
 module.exports = helpers;

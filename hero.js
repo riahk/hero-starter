@@ -151,14 +151,29 @@ var moves = {
 
   // Balanced
   balanced: function(gameData, helpers){
-    /*
+    
     //under construction
     var myHero = gameData.activeHero;
+    var mineStats = helpers.mineStats(gameData);
+    var teamMines = mineStats[0];
+    var nonTeamMines = mineStats[1];
+    var totalMines = mineStats[2];
+    
     //first, check hp
     if(myHero.health <= 50) { //if at half health, find nearest heal well
       var nearestWell = helpers.findClosestObjectOfType('HealthWell', gameData);
-      if(nearestWell
-    */
+      return tileDirection(nearestWell);
+    }
+
+    //if team does not own the majority of mines (3/4), capture mines
+    if((teamMines/totalMines) < 0.75) {
+      var nearestNonTeamMine = helpers.findClosestObjectOfType('NonTeamDiamondMine', gameData);
+      return tileDirection(nearestNonTeamMine);
+    } else { //if your team has occupied a lot of mines, go after an enemy
+        var nearestEnemy = helpers.findClosestObjectOfType('Enemy', gameData);
+        return tileDirection(nearestEnemy);
+      }
+      
   },
 
   // The "Northerner"
@@ -278,7 +293,7 @@ var moves = {
  };
 
 //  Set our heros strategy
-var  move =  moves.aggressor;
+var  move =  moves.balanced;
 
 // Export the move function here
 module.exports = move;
