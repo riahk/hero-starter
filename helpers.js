@@ -214,6 +214,22 @@ helpers.findNearestUnownedDiamondMine = function(gameData) {
   return pathInfoObject;
 };
 
+helpers.findNearestTeamDiamondMine = function(gameData) {
+  var hero = gameData.activeHero;
+  var board = gameData.board;
+
+  var pathInfoObject = helpers.findNearestObjectDirectionAndDistance(board, hero, function(mineTile) {
+    if(mineTile.type === 'Diamond Mine') {
+      if(mineTile.owner) {
+        return mineTile.owner.team == hero.team;
+      } else { return true; }
+    } else { return false; }
+  });
+
+  return pathInfoObject;
+
+}
+
 // Returns the nearest health well or false, if there are no health wells
 helpers.findNearestHealthWell = function(gameData) {
   var hero = gameData.activeHero;
@@ -283,6 +299,9 @@ helpers.findClosestObjectOfType = function(type, gameData) {
     case 'NonTeamDiamondMine':
       return helpers.findNearestNonTeamDiamondMine(gameData);
       break;
+    case 'TeamDiamondMine':
+      return helpers.findNearestTeamDiamondMine(gameData);
+      break;
     case 'UnownedDiamondMine':
       return helpers.findNearestUnownedDiamondMine(gameData);
       break;
@@ -315,8 +334,6 @@ helpers.findCloserTile = function(tile1, tile2) {
   } else { return tile2; }
 };
 
-
-//TODO: this fxn code doesn't work! need to fix
 
 //scans for the certain object type within a given range from a start point
 //startx is distancefromleft, starty is distancefromtop
@@ -404,31 +421,31 @@ helpers.oppositeDirection = function(direction) {
 }
 
 //scan the current diamond mine status (determines number of team, enemy and unowned diamond mines on map
-//returns an array, stats[0] = number of team mines; stats[1] = number of non-team mines
+//returns an array, stats[0] = number of team mines; stats[1] = number of non-team mines; stats[2] = total mines
 helpers.mineStats = function(gameData) {
   var hero = gameData.activeHero;
   var board = gameData.board;
-  var x;
-  var y;
   var currentTile;
 
   var teamMines;
   var nonTeamMines;
+  var totalMines;
 
-  for(x = 0; x <= 12; x++) {
-    for(y = 0; y <= 12; y++) {
-      currentTile = board.tiles[y][x];
-      if(currentTile.type === 'DiamondMine') {
-        if(currentTile.owner.team == hero.team) {
-          teamMines++;
-        } else { nonTeamMines++; }
-      }
-    }
+  var mineTiles = helpers.scanForTilesofType('DiamondMine', hero.distanceFromLeft, hero.distanceFromTop, 5, gameData);
+
+  totalMines = mineTiles.length;
+
+  for(var i = 0; i < mineTiles.length; i++) { //cycle through the minetiles
+    currentTile = mineTiles[i];
+    if(currentTile.owner && currentTile.owner.team == hero.team) {
+      teamMines++;
+    } else { nonTeamMines++; }
   }
 
   var stats = [];
   stats.push(teamMines);
   stats.push(nonTeamMines);
+  stats.push(totalMines);
 
   return stats;
 }

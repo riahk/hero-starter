@@ -159,21 +159,39 @@ var moves = {
     var nonTeamMines = mineStats[1];
     var totalMines = mineStats[2];
     
+    var nearestNonTeamMine = helpers.findClosestObjectOfType('NonTeamDiamondMine', gameData);
+    var nearestTeamMine = helpers.findClosestObjectOfType('TeamDiamondMine', gameData);
+    var nearestWell = helpers.findClosestObjectOfType('HealthWell', gameData);
+    var nearestWeakerEnemy = helpers.findClosestObjectOfType('WeakerEnemy', gameData);
+
     //first, check hp
     if(myHero.health <= 50) { //if at half health, find nearest heal well
-      var nearestWell = helpers.findClosestObjectOfType('HealthWell', gameData);
       return tileDirection(nearestWell);
     }
 
-    //if team does not own the majority of mines (3/4), capture mines
-    if((teamMines/totalMines) < 0.75) {
-      var nearestNonTeamMine = helpers.findClosestObjectOfType('NonTeamDiamondMine', gameData);
-      return tileDirection(nearestNonTeamMine);
-    } else { //if your team has occupied a lot of mines, go after an enemy
-        var nearestEnemy = helpers.findClosestObjectOfType('Enemy', gameData);
-        return tileDirection(nearestEnemy);
-      }
-      
+    //if a team diamond mine is closer than a non-team diamond mine, attack an enemy; otherwise capture a mine
+
+    if(nearestTeamMine && nearestNonTeamMine) { //check that there is a team and a non-team mine on the field
+      var closer = helpers.tileDirection(helpers.findCloserTile(nearestNonTeamMine, nearestTeamMine));
+      if(closer.owner && closer.owner.team == myHero.team) { //if team mine is closer
+        if(nearestWeakerEnemy) { //if there is a weaker enemey, attack it
+          return helpers.tileDirection(nearestWeakerEnemy);
+        } else { return 'Stay'; } //otherwise stay put
+      //if non-team mine is closer, capture it!
+      } else { return helpers.tileDirection(nearestNonTeamMine); }
+
+    } else if(nearestNonTeamMine) { //if your team hasn't captured any mines, capture one!
+        return helpers.tileDirection(nearestNonTeamMine);
+      } else { //in the rare case your team has captured all the mines...
+          if(myHero.health < 70) { //heal if you're closer to a heal well, otherwise attack an enemy
+            if(nearestWeakerEnemy) { //if there is a weaker enemy on the board
+              return helpers.tileDirection(helpers.findCloserTile(nearestWell, nearestWeakerEnemy));
+            } else { return helpers.tileDirection(nearestWell); }
+          //if in good health and there is a weaker enemy on the board, attack; otherwise stay put.
+          } else if(nearestWeakerEnemy) {
+              return helpers.tileDirection(nearestWeakerEnemy);
+            } else { return 'Stay'; }
+        } 
   },
 
   // The "Northerner"
