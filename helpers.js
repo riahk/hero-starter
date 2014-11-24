@@ -171,6 +171,7 @@ helpers.tileCoords = function(tile) {
 };
 
 // Returns the direction of the nearest non-team diamond mine or false, if there are no diamond mines
+// also takes into account the diamond mines owned by dead team members
 helpers.findNearestNonTeamDiamondMine = function(gameData) {
   var hero = gameData.activeHero;
   var board = gameData.board;
@@ -179,7 +180,9 @@ helpers.findNearestNonTeamDiamondMine = function(gameData) {
   var pathInfoObject = helpers.findNearestObjectDirectionAndDistance(board, hero, function(mineTile) {
     if (mineTile.type === 'DiamondMine') {
       if (mineTile.owner) {
-        return mineTile.owner.team !== hero.team;
+        if(mineTile.owner.dead) { //if the owner is dead, that mine is capturable (even if it's owned by a teammate
+          return true;
+        } else { return mineTile.owner.team !== hero.team; }
       } else {
         return true;
       }
