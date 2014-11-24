@@ -170,8 +170,14 @@ var moves = {
     }
 
     //if a team diamond mine is closer than a non-team diamond mine, attack an enemy; otherwise capture a mine
+    //note: it appears that when a team member dies, their mines still show up as owned by them. there needs
+    //to be a way to capture mines from dead team members
 
     if(nearestTeamMine && nearestNonTeamMine) { //check that there is a team and a non-team mine on the field
+      if(helpers.tileDistance(nearestTeamMine) === helpers.tileDistance(nearestNonTeamMine)) {
+        //if the mines are equidistant, prioritize capturing the non-team mine
+        return helpers.tileDirection(nearestNonTeamMine);
+      }
       var closer = helpers.tileDirection(helpers.findCloserTile(nearestNonTeamMine, nearestTeamMine));
       if(closer.owner && closer.owner.team == myHero.team) { //if team mine is closer
         if(nearestWeakerEnemy) { //if there is a weaker enemey, attack it
