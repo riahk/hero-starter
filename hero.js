@@ -166,7 +166,7 @@ var moves = {
 
     //first, check hp
     if(myHero.health <= 50) { //if at half health, find nearest heal well
-      return tileDirection(nearestWell);
+      return helpers.tileDirection(nearestWell);
     }
 
     //if a team diamond mine is closer than a non-team diamond mine, attack an enemy; otherwise capture a mine
