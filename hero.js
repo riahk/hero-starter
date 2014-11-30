@@ -152,7 +152,6 @@ var moves = {
   // Balanced
   balanced: function(gameData, helpers){
     
-    //under construction
     var myHero = gameData.activeHero;
     var mineStats = helpers.mineStats(gameData);
     var teamMines = mineStats[0];
@@ -164,39 +163,67 @@ var moves = {
     var nearestWell = helpers.findClosestObjectOfType('HealthWell', gameData);
     var nearestWeakerEnemy = helpers.findClosestObjectOfType('WeakerEnemy', gameData);
 
+    var nonTeamDistance = helpers.tileDistance(nearestNonTeamMine);
+    var teamMineDistance = helpers.tileDistance(nearestTeamMine);
+    var wellDistance = helpers.tileDistance(nearestWell);
+    var enemyDistance = helpers.tileDistance(nearestWeakerEnemy);
+
+    var nonTeamDirection = helpers.tileDirection(nearestNonTeamMine);
+    var teamMineDirection = helpers.tileDirection(nearestTeamMine);
+    var wellDirection = helpers.tileDirection(nearestWell);
+    var enemyDirection = helpers.tileDirection(nearestWeakerEnemy);
+
     //first, check hp
     if(myHero.health <= 50) { //if at half health, find nearest heal well
-      return helpers.tileDirection(nearestWell);
+      return wellDirection;
     }
 
     //if a team diamond mine is closer than a non-team diamond mine, attack an enemy; otherwise capture a mine
     //note: it appears that when a team member dies, their mines still show up as owned by them. there needs
     //to be a way to capture mines from dead team members
 
+    //if you have <70 hp and a heal well is closest, heal.
+    //if there are no weaker enemies, find nearest heal well.
+
     if(nearestTeamMine && nearestNonTeamMine) { //check that there is a team and a non-team mine on the field
-      if(helpers.tileDistance(nearestTeamMine) === helpers.tileDistance(nearestNonTeamMine)) {
+      if((myHero.health <= 70) && nearestWell && (wellDistance <= nonTeamDistance) && (wellDistance <= teamMineDistance)) {
+        //if hp is low and a heal well is closest, heal.
+        return wellDirection;
+      }
+      if(teamMineDistance === nonTeamDistance) {
         //if the mines are equidistant, prioritize capturing the non-team mine
-        return helpers.tileDirection(nearestNonTeamMine);
+        return nonTeamDirection;
       }
       var closer = helpers.tileDirection(helpers.findCloserTile(nearestNonTeamMine, nearestTeamMine));
       if(closer.owner && closer.owner.team == myHero.team) { //if team mine is closer
-        if(nearestWeakerEnemy) { //if there is a weaker enemey, attack it
-          return helpers.tileDirection(nearestWeakerEnemy);
-        } else { return 'Stay'; } //otherwise stay put
+        if(nearestWeakerEnemy) { //if there is a weaker enemy, attack it
+          return enemyDirection;
+        } else if(nearestWell) { //if there are no weaker enemies, heal!
+            return wellDirection; 
+          } else { return 'Stay'; } //otherwise stay put
       //if non-team mine is closer, capture it!
-      } else { return helpers.tileDirection(nearestNonTeamMine); }
+      } else { return nonTeamDirection; }
 
     } else if(nearestNonTeamMine) { //if your team hasn't captured any mines, capture one!
-        return helpers.tileDirection(nearestNonTeamMine);
+        if((myHero.health <= 70) && nearestWell && (wellDistance <= nonTeamDistance)) {
+          //if hp is low and a heal well is closest, heal.
+          return wellDirection;
+        } else { return helpers.tileDirection(nearestNonTeamMine); }
       } else { //in the rare case your team has captured all the mines...
-          if(myHero.health < 70) { //heal if you're closer to a heal well, otherwise attack an enemy
-            if(nearestWeakerEnemy) { //if there is a weaker enemy on the board
-              return helpers.tileDirection(helpers.findCloserTile(nearestWell, nearestWeakerEnemy));
-            } else { return helpers.tileDirection(nearestWell); }
+          if(myHero.health <= 70 && nearestWell) { 
+          //heal if you're closer to a heal well, otherwise attack an enemy
+            if(nearestWeakerEnemy) { 
+            //if there is a weaker enemy on the board and it is closer than heal well, attack
+              if(enemyDistance < wellDistance) {
+                return enemyDirection;
+              } else { return wellDirection; } //otherwise, heal
+            } else { return wellDirection; }
           //if in good health and there is a weaker enemy on the board, attack; otherwise stay put.
           } else if(nearestWeakerEnemy) {
-              return helpers.tileDirection(nearestWeakerEnemy);
-            } else { return 'Stay'; }
+              return enemyDirection;
+            } else if(nearestWell) { //if there are no weaker enemies, heal!
+                return wellDirection;
+              } else { return 'Stay'; }
         } 
   },
 
