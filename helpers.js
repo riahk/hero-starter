@@ -223,7 +223,7 @@ helpers.findNearestTeamDiamondMine = function(gameData) {
 
   var pathInfoObject = helpers.findNearestObjectDirectionAndDistance(board, hero, function(mineTile) {
     if(mineTile.type === 'Diamond Mine') {
-      if(mineTile.owner) {
+      if(mineTile.owner && !mineTile.owner.dead) { //checks that it has a LIVING owner
         return mineTile.owner.team == hero.team;
       } else { return true; }
     } else { return false; }
