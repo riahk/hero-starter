@@ -188,7 +188,7 @@ var moves = {
 
 
     if(nearestTeamMine && nearestNonTeamMine) { //check that there is a team and a non-team mine on the field
-      if((myHero.health <= 50) && nearestWell && (wellDistance <= nonTeamDistance) && (wellDistance <= teamMineDistance)) {
+      if((myHero.health <= 70) && nearestWell && (wellDistance === 1)) {
         //if hp is low and a heal well is closest, heal.
         return wellDirection;
       }
@@ -207,12 +207,12 @@ var moves = {
       } else { return nonTeamDirection; }
 
     } else if(nearestNonTeamMine) { //if your team hasn't captured any mines, capture one!
-        if((myHero.health <= 50) && nearestWell && (wellDistance <= nonTeamDistance)) {
+        if((myHero.health <= 70) && nearestWell && (wellDistance === 1)) {
           //if hp is low and a heal well is closest, heal.
           return wellDirection;
         } else { return helpers.tileDirection(nearestNonTeamMine); }
       } else { //in the rare case your team has captured all the mines...
-          if(myHero.health <= 50 && nearestWell) { 
+          if(myHero.health <= 70 && nearestWell && (wellDistance === 1)) { 
           //heal if you're closer to a heal well, otherwise attack an enemy
             if(nearestWeakerEnemy) { 
             //if there is a weaker enemy on the board and it is closer than heal well, attack
