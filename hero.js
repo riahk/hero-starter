@@ -178,6 +178,7 @@ var moves = {
       return wellDirection;
     }
 
+
     //if a team diamond mine is closer than a non-team diamond mine, attack an enemy; otherwise capture a mine
     //note: it appears that when a team member dies, their mines still show up as owned by them. there needs
     //to be a way to capture mines from dead team members
@@ -185,8 +186,9 @@ var moves = {
     //if you have <70 hp and a heal well is closest, heal.
     //if there are no weaker enemies, find nearest heal well.
 
+
     if(nearestTeamMine && nearestNonTeamMine) { //check that there is a team and a non-team mine on the field
-      if((myHero.health <= 70) && nearestWell && (wellDistance <= nonTeamDistance) && (wellDistance <= teamMineDistance)) {
+      if((myHero.health <= 50) && nearestWell && (wellDistance <= nonTeamDistance) && (wellDistance <= teamMineDistance)) {
         //if hp is low and a heal well is closest, heal.
         return wellDirection;
       }
@@ -205,12 +207,12 @@ var moves = {
       } else { return nonTeamDirection; }
 
     } else if(nearestNonTeamMine) { //if your team hasn't captured any mines, capture one!
-        if((myHero.health <= 70) && nearestWell && (wellDistance <= nonTeamDistance)) {
+        if((myHero.health <= 50) && nearestWell && (wellDistance <= nonTeamDistance)) {
           //if hp is low and a heal well is closest, heal.
           return wellDirection;
         } else { return helpers.tileDirection(nearestNonTeamMine); }
       } else { //in the rare case your team has captured all the mines...
-          if(myHero.health <= 70 && nearestWell) { 
+          if(myHero.health <= 50 && nearestWell) { 
           //heal if you're closer to a heal well, otherwise attack an enemy
             if(nearestWeakerEnemy) { 
             //if there is a weaker enemy on the board and it is closer than heal well, attack
